@@ -1,0 +1,4 @@
+imapclient
+pyzmail36
+python-dotenv
+requests
