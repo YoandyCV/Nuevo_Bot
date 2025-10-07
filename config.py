@@ -3,11 +3,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configuración para Zoho Mail
-radr = "yoandyc@zohomail.com" # Cambia por tu email de Zoho
+# Configuración CORRECTA para Zoho Mail
+radr =  "yoandyc@zohomail.com" # Tu email de Zoho
 imapserver = "imap.zoho.com"
+imapport = 993  # ⬅️ Puerto IMAP correcto
 smtpserver = "smtp.zoho.com"  
-smtpserverport = 587
-pwd = os.getenv('ZOHO_PASSWORD')  # Asegúrate de tener esta variable en Render
+smtpserverport = 465  # ⬅️ Puerto SMTP correcto
+pwd = os.getenv('ZOHO_PASSWORD')
 sadr = "yoacv@nauta.cu"
-check_freq = 10
+check_freq = 30
