@@ -4,10 +4,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuración para Zoho Mail
-radr = "yoandyc@zohomail.com"  # Tu email de Zoho
-imapserver = "imap.zoho.com"    # Servidor IMAP de Zoho
-smtpserver = "smtp.zoho.com"    # Servidor SMTP de Zoho  
-smtpserverport = 465
-pwd = os.getenv('ZOHO_PASSWORD')  # Contraseña de Zoho
-sadr = "yoacv@nauta.cu"  # Email que puede enviar comandos
-check_freq = 10  # Revisar cada 10 segundos
+radr = "yoandyc@zohomail.com" # Cambia por tu email de Zoho
+imapserver = "imap.zoho.com"
+smtpserver = "smtp.zoho.com"  
+smtpserverport = 587
+pwd = os.getenv('ZOHO_PASSWORD')  # Asegúrate de tener esta variable en Render
+sadr = "yoacv@nauta.cu"
+check_freq = 10
