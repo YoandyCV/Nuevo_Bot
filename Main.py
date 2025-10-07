@@ -1,133 +1,155 @@
-from config import *
-import imapclient
-import imaplib
-import pyzmail
-import email.message
-import smtplib
+#!/usr/bin/env python3
+from flask import Flask, Response
+import threading
+import os
 import time
-from comandos import *
+import logging
 
-imaplib._MAXLINE = 1000000
+# Configuración Flask para Render
+app = Flask(__name__)
 
-def imap_init():
-    print("Conectando IMAP... ", end='')
-    global i
-    i = imapclient.IMAPClient(imapserver)
-    c = i.login(radr, pwd)
-    i.select_folder("INBOX")
-    print("Éxito.")
+@app.route('/')
+def home():
+    return "🤖 Bot de Correo Activo - Render"
 
-def smtp_init():
-    print("Conectando SMTP...", end='')
-    global s
-    s = smtplib.SMTP(smtpserver, smtpserverport)
-    c = s.starttls()[0]
-    if c != 220:
-        raise Exception('Conexión TLS fallida: ' + str(c))
-    c = s.login(radr, pwd)[0]
-    if c != 235:
-        raise Exception('SMTP login fallido: ' + str(c))
-    print("Éxito.")
+@app.route('/health')
+def health():
+    return "OK", 200
 
-def get_unread():
-    uids = i.search(['UNSEEN'])
-    if not uids:
-        return None
-    else:
-        print("Encontrados %s sin leer" % len(uids))
-        return i.fetch(uids, ['BODY[]', 'FLAGS'])
+@app.route('/ping')
+def ping():
+    return "pong", 200
 
-def analyze_msg(raws, a):
+# Tu código del bot (importa aquí para evitar ciclos)
+def run_bot():
     try:
-        msg = pyzmail.PyzMessage.factory(raws[a][b'BODY[]'])
-        frm = msg.get_addresses('from')
-        if not frm or frm[0][1] != sadr:
-            print(f"Correo de {frm[0][1] if frm else 'desconocido'} - saltando")
-            return None
-            
-        if msg.text_part is None:
-            return None
-            
-        text = msg.text_part.get_payload().decode(msg.text_part.charset)
-        text = text.strip()
-        cmds = text.split(' ', 1)
+        # Importar aquí para evitar problemas de inicialización
+        from config import *
+        import imapclient
+        import imaplib
+        import pyzmail
+        import email.message
+        import smtplib
+        from comandos import *
+
+        imaplib._MAXLINE = 1000000
         
-        if len(cmds) == 1:
-            cmds.append('')
-            
-        if cmds[0] not in commands:
-            return False
-            
-        return cmds
-    except Exception as e:
-        print(f"Error analizando mensaje: {e}")
-        return None
+        def imap_init():
+            print("Conectando IMAP... ", end='')
+            global i
+            i = imapclient.IMAPClient(imapserver)
+            c = i.login(radr, pwd)
+            i.select_folder("INBOX")
+            print("Éxito.")
 
-def mail(text):
-    print("Enviando email...")
-    msg = email.message.EmailMessage()
-    msg["From"] = radr
-    msg["To"] = sadr
-    msg["Subject"] = "Respuesta Bot"
-    msg.set_content(text)
-    
-    try:
-        s.send_message(msg)
-        print("Email enviado correctamente")
-    except Exception as e:
-        print(f"Error enviando email: {e}")
+        def smtp_init():
+            print("Conectando SMTP...", end='')
+            global s
+            s = smtplib.SMTP(smtpserver, smtpserverport)
+            c = s.starttls()[0]
+            if c != 220:
+                raise Exception('Conexión TLS fallida: ' + str(c))
+            c = s.login(radr, pwd)[0]
+            if c != 235:
+                raise Exception('SMTP login fallido: ' + str(c))
+            print("Éxito.")
 
-# Inicializar conexiones
-imap_init()
-smtp_init()
-
-# Bucle principal corregido
-while True:
-    try:
-        print("Esperando comandos...")
-        msgs = get_unread()
-        
-        if msgs is None:
-            time.sleep(check_freq)
-            continue
-            
-        for a in msgs.keys():
-            if type(a) is not int:
-                continue
-                
-            cmds = analyze_msg(msgs, a)
-            if cmds is None:
-                continue
-            elif cmds is False:
-                t = "Comando no válido. Los comandos son: \n"
-                for l in commands.keys():
-                    t = t + str(l) + "\n"
-                mail(t)
-                continue
+        def get_unread():
+            uids = i.search(['UNSEEN'])
+            if not uids:
+                return None
             else:
-                print(f"Comando recibido: {cmds}")
-                r = commands[cmds[0]](cmds)
-                mail(str(r))
-                print("Comando ejecutado")
-                
-        time.sleep(check_freq)
-        
-    except KeyboardInterrupt:
-        print("Cerrando bot...")
-        break
-    except Exception as e:
-        print(f"Error: {e}")
-        # Reconectar después de error
-        try:
-            imap_init()
-            smtp_init()
-        except:
-            print("Reconexión fallida, esperando...")
-            time.sleep(10)
+                print("Encontrados %s sin leer" % len(uids))
+                return i.fetch(uids, ['BODY[]', 'FLAGS'])
 
-# Cerrar conexiones al final
-try:
-    i.logout()
-    s.quit()
-except:
-    pass
+        def analyze_msg(raws, a):
+            try:
+                msg = pyzmail.PyzMessage.factory(raws[a][b'BODY[]'])
+                frm = msg.get_addresses('from')
+                if not frm or frm[0][1] != sadr:
+                    print(f"Correo de {frm[0][1] if frm else 'desconocido'} - saltando")
+                    return None
+                    
+                if msg.text_part is None:
+                    return None
+                    
+                text = msg.text_part.get_payload().decode(msg.text_part.charset)
+                text = text.strip()
+                cmds = text.split(' ', 1)
+                
+                if len(cmds) == 1:
+                    cmds.append('')
+                    
+                if cmds[0] not in commands:
+                    return False
+                    
+                return cmds
+            except Exception as e:
+                print(f"Error analizando mensaje: {e}")
+                return None
+
+        def send_mail(text):
+            print("Enviando email...")
+            msg = email.message.EmailMessage()
+            msg["From"] = radr
+            msg["To"] = sadr
+            msg["Subject"] = "Respuesta Bot"
+            msg.set_content(text)
+            
+            try:
+                s.send_message(msg)
+                print("Email enviado correctamente")
+            except Exception as e:
+                print(f"Error enviando email: {e}")
+
+        # Inicializar conexiones
+        imap_init()
+        smtp_init()
+        
+        # Bucle principal del bot
+        while True:
+            try:
+                print("Revisando correos...")
+                msgs = get_unread()
+                
+                if msgs:
+                    for a in msgs.keys():
+                        if type(a) is not int:
+                            continue
+                        cmds = analyze_msg(msgs, a)
+                        if cmds is None:
+                            continue
+                        elif cmds is False:
+                            t = "Comando no válido. Los comandos son: \n"
+                            for l in commands.keys():
+                                t = t + str(l) + "\n"
+                            send_mail(t)
+                            continue
+                        else:
+                            print(f"Comando recibido: {cmds}")
+                            r = commands[cmds[0]](cmds)
+                            send_mail(str(r))
+                            print("Comando ejecutado")
+                
+                time.sleep(check_freq)
+                
+            except Exception as e:
+                print(f"Error en bucle principal: {e}")
+                time.sleep(30)
+                
+    except Exception as e:
+        print(f"Error inicializando bot: {e}")
+        logging.error(f"Bot initialization failed: {e}")
+
+def run_flask():
+    """Ejecutar servidor web en puerto que Render espera"""
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
+
+if __name__ == "__main__":
+    # Iniciar bot en hilo separado
+    bot_thread = threading.Thread(target=run_bot, daemon=True)
+    bot_thread.start()
+    
+    # Iniciar servidor web (principal para Render)
+    run_flask()
