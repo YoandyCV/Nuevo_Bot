@@ -58,23 +58,26 @@ def imap_init():
 def smtp_init():
     global s
     logger.info("🔄 Conectando SMTP...")
-    s = smtplib.SMTP(smtpserver, smtpserverport)
-    c = s.starttls()[0]
-    if c != 220:
-        raise Exception('Conexión TLS fallida: ' + str(c))
-    c = s.login(radr, pwd)[0]
-    if c != 235:
-        raise Exception('SMTP login fallido: ' + str(c))
-    logger.info("✅ SMTP conectado")
-
-def get_unread():
-    uids = i.search(['UNSEEN'])
-    if not uids:
-        return None
-    else:
-        logger.info(f"📨 Encontrados {len(uids)} sin leer")
-        return i.fetch(uids, ['BODY[]', 'FLAGS'])
-
+    try:
+        # ⚠️ PARA PUERTO 465 DE ZOHO USAR SMTP_SSL
+        logger.info(f"📤 Conectando a {smtpserver}:{smtpserverport} con SSL...")
+        s = smtplib.SMTP_SSL(smtpserver, smtpserverport, timeout=30)
+        logger.info("✅ Conexión SSL establecida")
+        
+        # ⚠️ LOGIN DIRECTAMENTE - Zoho en puerto 465 no necesita starttls()
+        logger.info("🔐 Iniciando login...")
+        s.login(radr, pwd)
+        logger.info("✅ Login SMTP exitoso")
+        
+        logger.info("✅ SMTP conectado correctamente")
+        return True
+    except Exception as e:
+        logger.error(f"❌ Error en SMTP init: {e}")
+        # Log más detallado para debugging
+        logger.error(f"❌ Detalles: servidor={smtpserver}, puerto={smtpserverport}, usuario={radr}")
+        return False
+        
+        
 def analyze_msg(raws, a):
     try:
         logger.debug(f"🔎 Analizando mensaje UID: {a}")
