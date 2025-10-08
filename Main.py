@@ -59,12 +59,14 @@ def smtp_init():
     global s
     logger.info("🔄 Conectando SMTP...")
     try:
-        # ⚠️ PARA PUERTO 465 DE ZOHO USAR SMTP_SSL
-        logger.info(f"📤 Conectando a {smtpserver}:{smtpserverport} con SSL...")
-        s = smtplib.SMTP_SSL(smtpserver, smtpserverport, timeout=30)
-        logger.info("✅ Conexión SSL establecida")
+        # ⚠️ PARA GMAIL CON PUERTO 587
+        logger.info(f"📤 Conectando a {smtpserver}:{smtpserverport}...")
+        s = smtplib.SMTP(smtpserver, smtpserverport, timeout=30)
         
-        # ⚠️ LOGIN DIRECTAMENTE - Zoho en puerto 465 no necesita starttls()
+        logger.info("🔒 Iniciando TLS...")
+        s.starttls()
+        logger.info("✅ TLS establecido")
+        
         logger.info("🔐 Iniciando login...")
         s.login(radr, pwd)
         logger.info("✅ Login SMTP exitoso")
@@ -73,10 +75,28 @@ def smtp_init():
         return True
     except Exception as e:
         logger.error(f"❌ Error en SMTP init: {e}")
-        # Log más detallado para debugging
-        logger.error(f"❌ Detalles: servidor={smtpserver}, puerto={smtpserverport}, usuario={radr}")
+        logger.error(f"❌ Detalles: servidor={smtpserver}, puerto={smtpserverport}")
         return False
+
+
+def get_unread():
+    try:
+        logger.debug("🔍 Buscando emails no leídos...")
+        uids = i.search(['UNSEEN'])
+        logger.debug(f"📨 UIDs encontrados: {uids}")
         
+        if not uids:
+            logger.debug("📭 No hay emails nuevos")
+            return None
+        else:
+            logger.info(f"🎯 Encontrados {len(uids)} emails sin leer")
+            messages = i.fetch(uids, ['BODY[]', 'FLAGS'])
+            logger.debug(f"✅ Emails fetch exitoso, {len(messages)} mensajes obtenidos")
+            return messages
+    except Exception as e:
+        logger.error(f"❌ Error en get_unread: {e}")
+        return None                
+                        
         
 def analyze_msg(raws, a):
     try:
