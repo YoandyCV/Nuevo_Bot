@@ -188,9 +188,8 @@ def run_bot():
                         logger.debug("⏭️ Mensaje saltado (None)")
                         continue
                     elif cmds is False:
-    logger.info("❌ Comando inválido detectado")
-    # En lugar de solo listar comandos, sugerir usar /help
-    t = """❌ **Comando no reconocido**
+                        logger.info("❌ Comando inválido detectado")
+                        t = """❌ **Comando no reconocido**
 
 El comando que enviaste no existe o tiene un error de escritura.
 
@@ -202,13 +201,13 @@ El comando que enviaste no existe o tiene un error de escritura.
 /web [búsqueda|url] - Busca en web o visita URL
 
 *Si crees que esto es un error, verifica la ortografía del comando.*"""
-    # Obtener remitente del mensaje original
-    msg_data = msgs[a]
-    msg_obj = pyzmail.PyzMessage.factory(msg_data[b'BODY[]'])
-    frm = msg_obj.get_addresses('from')
-    sender_email = frm[0][1] if frm else sadr
-    send_mail(t, sender_email)
-    continue
+                        # Obtener remitente del mensaje original
+                        msg_data = msgs[a]
+                        msg_obj = pyzmail.PyzMessage.factory(msg_data[b'BODY[]'])
+                        frm = msg_obj.get_addresses('from')
+                        sender_email = frm[0][1] if frm else sadr
+                        send_mail(t, sender_email)
+                        continue
                     elif cmds == "PERMISSION_DENIED":
                         logger.warning("🚫 Intento de acceso no autorizado a comando admin")
                         # Obtener remitente del mensaje original
@@ -277,8 +276,6 @@ El comando que enviaste no existe o tiene un error de escritura.
             except Exception as reconect_error:
                 logger.error(f"❌ Error en reconexión: {reconect_error}")
                 time.sleep(60)
-
-
 
 def run_flask():
     """Ejecutar servidor web en puerto que Render espera"""
