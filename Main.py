@@ -66,28 +66,35 @@ def get_unread():
 
 def analyze_msg(raws, a):
     try:
+        logging.debug(f"Analizando mensaje UID: {a}")
         msg = pyzmail.PyzMessage.factory(raws[a][b'BODY[]'])
         frm = msg.get_addresses('from')
-        if not frm or frm[0][1] != sadr:
-            print(f"Correo de {frm[0][1] if frm else 'desconocido'} - saltando")
-            return None
+        
+        sender_email = frm[0][1] if frm else "desconocido"
+        logging.info(f"📧 Email recibido de: {sender_email}")
             
         if msg.text_part is None:
+            logging.warning("Email sin parte de texto")
             return None
             
         text = msg.text_part.get_payload().decode(msg.text_part.charset)
         text = text.strip()
+        logging.info(f"📝 Contenido del email: '{text}'")
+        
         cmds = text.split(' ', 1)
         
         if len(cmds) == 1:
             cmds.append('')
             
+        logging.info(f"🔍 Comando detectado: {cmds[0]}")
+            
         if cmds[0] not in commands:
+            logging.warning(f"Comando no reconocido: {cmds[0]}")
             return False
             
         return cmds
     except Exception as e:
-        print(f"Error analizando mensaje: {e}")
+        logging.error(f"Error analizando mensaje: {e}")
         return None
 
 def send_mail(text):
