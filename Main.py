@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# En main.py
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
+from config import *
+
 from flask import Flask
 import threading
 import os
@@ -10,6 +17,7 @@ import pyzmail
 import email.message
 import smtplib
 from datetime import datetime
+import socket
 
 # Importar config aquí, a nivel de módulo
 from config import *
@@ -46,6 +54,13 @@ imaplib._MAXLINE = 1000000
 # Variables globales para conexiones
 i = None
 s = None
+
+def test_smtp_connectivity():
+    try:
+        socket.create_connection((smtpserver, smtpserverport), timeout=10)
+        logger.info("✅ Conectividad SMTP disponible")
+    except Exception as e:
+        logger.error(f"🚫 No se puede conectar a {smtpserver}:{smtpserverport} - {e}")
 
 def imap_init():
     global i
@@ -222,8 +237,7 @@ El comando que enviaste no existe o tiene un error de escritura.
 /help - Muestra ayuda completa
 /echo [mensaje] - Devuelve un eco
 /web [búsqueda|url] - Busca en web o visita URL
-
-*Si crees que esto es un error, verifica la ortografía del comando.*"""
+"""
                         # Obtener remitente del mensaje original
                         msg_data = msgs[a]
                         msg_obj = pyzmail.PyzMessage.factory(msg_data[b'BODY[]'])
@@ -293,6 +307,7 @@ El comando que enviaste no existe o tiene un error de escritura.
             
             try:
                 logger.info("🔄 Re-inicializando conexiones...")
+                test_smtp_connectivity()
                 imap_init()
                 smtp_init()
                 logger.info("✅ Reconexión exitosa")

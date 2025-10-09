@@ -1,10 +1,12 @@
+# configuracion del bot
+
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configuración CORRECTA para Zoho Mail
-radr =  "yoandyc.bot@gmail.com" # Email bot
+# Email que servira para el bot
+radr =  "yoandyc.bot@gmail.com"
 
 imapserver = "imap.gmail.com"
 smtpserver = "smtp.gmail.com"  
